@@ -26,7 +26,7 @@ const TABLE_USER: &str = "user";
 const USER_COLUMNS: &str = "id, name, mail, password";
 
 impl UserService {
-    pub async fn login(&self, pool: Data<&DbPool>, data: VoLogin) -> Result<VoUser, CustomError> {
+    pub async fn login(&self, pool: &Data<&DbPool>, data: VoLogin) -> Result<VoUser, CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
         let sql = helper.and_where_eq("mail", &data.email).sql();
         let user: User = sqlx::query_as(&sql)
@@ -40,7 +40,7 @@ impl UserService {
     }
     pub async fn change_pass(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         user: &VoUser,
         data: VoUpdateUser,
     ) -> Result<(), CustomError> {
@@ -66,7 +66,7 @@ impl UserService {
 
     pub async fn check_token(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         data: VoUser,
     ) -> Result<User, CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
@@ -90,7 +90,7 @@ const HARD_COLUMNS: &str = "id, hard_version, name, category, has_ble, has_finge
 const HARD_ADD_COLUMNS: &str =
     " hard_version, name, category, has_ble, has_finger, has_stm32, desc";
 impl DeviceHardService {
-    pub async fn devices(&self, pool: Data<&DbPool>) -> Result<Vec<VoDeviceHard>, CustomError> {
+    pub async fn devices(&self, pool: &Data<&DbPool>) -> Result<Vec<VoDeviceHard>, CustomError> {
         let sql = SqlHelper::query(TABLE_HARD, HARD_COLUMNS).sql();
         let devices: Vec<DeviceHard> = sqlx::query_as(&sql)
             .fetch_all(pool.0)
@@ -104,7 +104,7 @@ impl DeviceHardService {
 
     pub async fn add_device(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         data: VoAddHard,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::insert(TABLE_HARD, HARD_ADD_COLUMNS).sql();
@@ -128,7 +128,7 @@ impl DeviceHardService {
 
     pub async fn update_device(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         data: VoUpdateHard,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::update(TABLE_HARD, HARD_ADD_COLUMNS)
@@ -160,7 +160,7 @@ const TABLE_SOFT: &str = "version_type";
 const SOFT_COLUMNS: &str = "id, name";
 const SOFT_ADD_COLUMNS: &str = "name";
 impl DeviceSoftService {
-    pub async fn soft_versions(&self, pool: Data<&DbPool>) -> Result<Vec<DeviceSoft>, CustomError> {
+    pub async fn soft_versions(&self, pool: &Data<&DbPool>) -> Result<Vec<DeviceSoft>, CustomError> {
         let sql = SqlHelper::query(TABLE_SOFT, SOFT_COLUMNS).sql();
         sqlx::query_as(&sql)
             .fetch_all(pool.0)
@@ -170,7 +170,7 @@ impl DeviceSoftService {
 
     pub async fn add_soft_version(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         data: VoAddSoft,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::insert(TABLE_SOFT, SOFT_ADD_COLUMNS).sql();
@@ -180,7 +180,7 @@ impl DeviceSoftService {
 
     pub async fn update_soft_version(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         data: VoUpdateSoft,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::update(TABLE_SOFT, SOFT_ADD_COLUMNS)
@@ -206,7 +206,7 @@ const TABLE_FIRM: &str = "firm";
 const FIRM_COLUMNS: &str = "id, hard_version, version_name, version_format, version_type, finger_level, url, desc, update_time, rely_version_type, min, max, des_en, des_ko, des_sp";
 const FIRM_ADD_COLUMNS: &str = " hard_version, version_name, version_format, version_type, finger_level, url, desc, update_time, rely_version_type, min, max, des_en, des_ko, des_sp";
 impl FirmService {
-    pub async fn firms(&self, pool: Data<&DbPool>) -> Result<Vec<VoFirm>, CustomError> {
+    pub async fn firms(&self, pool: &Data<&DbPool>) -> Result<Vec<VoFirm>, CustomError> {
         let sql = SqlHelper::query(TABLE_FIRM, FIRM_COLUMNS)
             .order_desc("update_time")
             .sql();
@@ -219,7 +219,7 @@ impl FirmService {
     }
     pub async fn firms_by_device(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         hard_version: i32,
     ) -> Result<Vec<VoFirm>, CustomError> {
         let sql = SqlHelper::query(TABLE_FIRM, FIRM_COLUMNS)
@@ -234,7 +234,7 @@ impl FirmService {
         Ok(firms)
     }
 
-    pub async fn add_firms(&self, pool: Data<&DbPool>, data: VoAddFirm) -> Result<(), CustomError> {
+    pub async fn add_firms(&self, pool: &Data<&DbPool>, data: VoAddFirm) -> Result<(), CustomError> {
         let sql = SqlHelper::insert(TABLE_FIRM, FIRM_ADD_COLUMNS).sql();
         let data = data.check_data();
         sqlx::query(&sql)
@@ -262,7 +262,7 @@ impl FirmService {
 
     pub async fn update_firms(
         &self,
-        pool: Data<&DbPool>,
+        pool: &Data<&DbPool>,
         data: VoUpdateFirm,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::update(TABLE_FIRM, FIRM_ADD_COLUMNS)

@@ -49,8 +49,8 @@ pub struct VoUpdateUser {
 
 #[derive(Serialize, Deserialize, Object)]
 pub struct BaseInfo {
-    pub hard_versions: Vec<DeviceHard>,
-    pub soft_versions: Vec<DeviceSoft>,
+    pub hard: Vec<VoDeviceHard>,
+    pub soft: Vec<DeviceSoft>,
 }
 
 #[derive(Object, Serialize, Deserialize)]
