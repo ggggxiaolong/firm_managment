@@ -1,10 +1,13 @@
-use chrono::Utc;
-use poem::web::Data;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use poem::{web::Data};
 
 use crate::{
     domain::{
         dto::{DeviceHard, DeviceSoft, Firm, User},
-        vo::{CustomError, VoFirm, VoLogin, VoUpdateUser, VoUser},
+        vo::{
+            CustomError, VoAddFirm, VoAddHard, VoAddSoft, VoFirm, VoLogin, VoUpdateFirm,
+            VoUpdateHard, VoUpdateSoft, VoUpdateUser, VoUser, VoDeviceHard,
+        },
     },
     utils::sql_helper::SqlHelper,
     DbPool,
@@ -84,13 +87,70 @@ pub struct DeviceHardService;
 
 const TABLE_HARD: &str = "device_type";
 const HARD_COLUMNS: &str = "id, hard_version, name, category, has_ble, has_finger, has_stm32, desc";
+const HARD_ADD_COLUMNS: &str =
+    " hard_version, name, category, has_ble, has_finger, has_stm32, desc";
 impl DeviceHardService {
-    pub async fn devices(&self, pool: Data<&DbPool>) -> Result<Vec<DeviceHard>, CustomError> {
+    pub async fn devices(&self, pool: Data<&DbPool>) -> Result<Vec<VoDeviceHard>, CustomError> {
         let sql = SqlHelper::query(TABLE_HARD, HARD_COLUMNS).sql();
-        sqlx::query_as(&sql)
+        let devices: Vec<DeviceHard> = sqlx::query_as(&sql)
             .fetch_all(pool.0)
-            .await
-            .map_err(CustomError::from)
+            .await?;
+        let mut data = Vec::<VoDeviceHard>::with_capacity(devices.len());
+        for d in devices {
+            data.push(d.into());
+        }
+        Ok(data)
+    }
+
+    pub async fn add_device(
+        &self,
+        pool: Data<&DbPool>,
+        data: VoAddHard,
+    ) -> Result<(), CustomError> {
+        let sql = SqlHelper::insert(TABLE_HARD, HARD_ADD_COLUMNS).sql();
+        let rows_affected = sqlx::query(&sql)
+            .bind(data.hard_version)
+            .bind(data.name)
+            .bind(i32::from(data.category))
+            .bind(data.has_ble)
+            .bind(data.has_finger)
+            .bind(data.has_stm32)
+            .bind(data.desc)
+            .execute(pool.0)
+            .await?
+            .rows_affected();
+        if rows_affected > 0 {
+            Ok(())
+        } else {
+            Err(CustomError::DataNotFound)
+        }
+    }
+
+    pub async fn update_device(
+        &self,
+        pool: Data<&DbPool>,
+        data: VoUpdateHard,
+    ) -> Result<(), CustomError> {
+        let sql = SqlHelper::update(TABLE_HARD, HARD_ADD_COLUMNS)
+            .and_where_eq(" id ", "?")
+            .sql();
+        let rows_affected = sqlx::query(&sql)
+            .bind(data.hard_version)
+            .bind(data.name)
+            .bind(i32::from(data.category))
+            .bind(data.has_ble)
+            .bind(data.has_finger)
+            .bind(data.has_stm32)
+            .bind(data.desc)
+            .bind(data.id)
+            .execute(pool.0)
+            .await?
+            .rows_affected();
+        if rows_affected > 0 {
+            Ok(())
+        } else {
+            Err(CustomError::DataNotFound)
+        }
     }
 }
 
@@ -98,6 +158,7 @@ pub struct DeviceSoftService;
 
 const TABLE_SOFT: &str = "version_type";
 const SOFT_COLUMNS: &str = "id, name";
+const SOFT_ADD_COLUMNS: &str = "name";
 impl DeviceSoftService {
     pub async fn soft_versions(&self, pool: Data<&DbPool>) -> Result<Vec<DeviceSoft>, CustomError> {
         let sql = SqlHelper::query(TABLE_SOFT, SOFT_COLUMNS).sql();
@@ -106,12 +167,44 @@ impl DeviceSoftService {
             .await
             .map_err(CustomError::from)
     }
+
+    pub async fn add_soft_version(
+        &self,
+        pool: Data<&DbPool>,
+        data: VoAddSoft,
+    ) -> Result<(), CustomError> {
+        let sql = SqlHelper::insert(TABLE_SOFT, SOFT_ADD_COLUMNS).sql();
+        sqlx::query(&sql).bind(data.name).execute(pool.0).await?;
+        Ok(())
+    }
+
+    pub async fn update_soft_version(
+        &self,
+        pool: Data<&DbPool>,
+        data: VoUpdateSoft,
+    ) -> Result<(), CustomError> {
+        let sql = SqlHelper::update(TABLE_SOFT, SOFT_ADD_COLUMNS)
+            .and_where_eq(" id ", "?")
+            .sql();
+        let rows_affected = sqlx::query(&sql)
+            .bind(data.name)
+            .bind(data.id)
+            .execute(pool.0)
+            .await?
+            .rows_affected();
+        if rows_affected > 0 {
+            Ok(())
+        } else {
+            Err(CustomError::DataNotFound)
+        }
+    }
 }
 
 pub struct FirmService;
 
 const TABLE_FIRM: &str = "firm";
 const FIRM_COLUMNS: &str = "id, hard_version, version_name, version_format, version_type, finger_level, url, desc, update_time, rely_version_type, min, max, des_en, des_ko, des_sp";
+const FIRM_ADD_COLUMNS: &str = " hard_version, version_name, version_format, version_type, finger_level, url, desc, update_time, rely_version_type, min, max, des_en, des_ko, des_sp";
 impl FirmService {
     pub async fn firms(&self, pool: Data<&DbPool>) -> Result<Vec<VoFirm>, CustomError> {
         let sql = SqlHelper::query(TABLE_FIRM, FIRM_COLUMNS)
@@ -139,6 +232,70 @@ impl FirmService {
             firms.push(f.into())
         }
         Ok(firms)
+    }
+
+    pub async fn add_firms(&self, pool: Data<&DbPool>, data: VoAddFirm) -> Result<(), CustomError> {
+        let sql = SqlHelper::insert(TABLE_FIRM, FIRM_ADD_COLUMNS).sql();
+        let data = data.check_data();
+        sqlx::query(&sql)
+            .bind(data.hard_version)
+            .bind(data.version_name)
+            .bind(data.version_format)
+            .bind(data.version_type)
+            .bind(data.finger_level)
+            .bind(data.url)
+            .bind(data.desc)
+            .bind(DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(data.update_time, 0),
+                Utc,
+            ))
+            .bind(data.rely_version_type)
+            .bind(data.min)
+            .bind(data.max)
+            .bind(data.des_en)
+            .bind(data.des_ko)
+            .bind(data.des_sp)
+            .execute(pool.0)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_firms(
+        &self,
+        pool: Data<&DbPool>,
+        data: VoUpdateFirm,
+    ) -> Result<(), CustomError> {
+        let sql = SqlHelper::update(TABLE_FIRM, FIRM_ADD_COLUMNS)
+            .and_where_eq(" id ", "?")
+            .sql();
+        let data = data.check_data();
+        let rows_affected = sqlx::query(&sql)
+            .bind(data.hard_version)
+            .bind(data.version_name)
+            .bind(data.version_format)
+            .bind(data.version_type)
+            .bind(data.finger_level)
+            .bind(data.url)
+            .bind(data.desc)
+            .bind(DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(data.update_time, 0),
+                Utc,
+            ))
+            .bind(data.rely_version_type)
+            .bind(data.min)
+            .bind(data.max)
+            .bind(data.des_en)
+            .bind(data.des_ko)
+            .bind(data.des_sp)
+            .bind(data.id)
+            .execute(pool.0)
+            .await?
+            .rows_affected();
+        if rows_affected > 0 {
+            Ok(())
+        } else {
+            Err(CustomError::DataNotFound)
+        }
     }
 }
 

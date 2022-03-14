@@ -16,6 +16,42 @@ impl SqlHelper {
         helper
     }
 
+    pub fn update(table: &str, columns: &str) -> Self {
+        let mut helper = SqlHelper {
+            sql: String::new(),
+            has_where: false,
+        };
+        helper.sql.push_str("UPDATE ");
+        helper.sql.push_str(table);
+        helper.sql.push_str(" SET ");
+        for colum in columns.split(',').collect::<Vec<&str>>(){
+            helper.sql.push_str(colum);
+            helper.sql.push_str(" = ?,");
+        }
+        helper.sql.pop();
+        helper.sql.push(' ');
+        helper
+    }
+
+    pub fn insert(table: &str, columns: &str) -> Self {
+        let mut helper = SqlHelper {
+            sql: String::new(),
+            has_where: false,
+        };
+        helper.sql.push_str("INSERT INTO ");
+        helper.sql.push_str(table);
+        helper.sql.push_str(" [( ");
+        helper.sql.push_str(columns);
+        helper.sql.push_str(" )] ");
+        helper.sql.push_str("VALUES (");
+        for _ in columns.split(',').collect::<Vec<&str>>(){
+            helper.sql.push_str(" ?,");
+        }
+        helper.sql.pop();
+        helper.sql.push_str(" ) ");
+        helper
+    }
+
     pub fn and_where_eq(&mut self, column_name: &str, mask: &str) -> &mut Self {
         if self.has_where {
             self.sql.push_str(" AND ");
@@ -102,5 +138,27 @@ impl SqlHelper {
 
     pub fn sql(&self) -> String {
         self.sql.clone()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::SqlHelper;
+
+
+    #[test]
+    pub fn test_intser(){
+        let sql = SqlHelper::insert("table", "columns").sql();
+        assert_eq!(&sql, "INSERT INTO table [( columns )] VALUES ( ? ) ");
+        let sql = SqlHelper::insert("table", "id, name").sql();
+        assert_eq!(&sql, "INSERT INTO table [( id, name )] VALUES ( ?, ? ) ");
+    }
+
+    #[test]
+    pub fn test_update(){
+        let sql = SqlHelper::update("table", "columns").sql();
+        assert_eq!(&sql, "UPDATE table SET columns = ? ");
+        let sql = SqlHelper::update("table", "id, name").sql();
+        assert_eq!(&sql, "UPDATE table SET id = ?, name = ? ");
     }
 }

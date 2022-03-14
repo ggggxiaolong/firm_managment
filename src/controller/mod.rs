@@ -3,8 +3,8 @@ use poem_openapi::{param::Path, payload::Json, OpenApi,auth::ApiKey,SecuritySche
 
 use crate::{
     domain::{
-        dto::{DeviceHard, DeviceSoft},
-        vo::{Token, VoLogin, VoUpdateUser, VoUser, VoFirm},
+        dto::{DeviceSoft},
+        vo::{Token, VoLogin, VoUpdateUser, VoUser, VoFirm, VoAddHard, VoUpdateHard, VoAddSoft, VoUpdateSoft, VoAddFirm, VoUpdateFirm, VoDeviceHard},
     },
     service::{SYS_FIRM_SERVICE, SYS_HARD_SERVICE, SYS_SOFT_SERVICE, SYS_USER_SERVICE},
     utils::jwt::{gen_user_token, validate_token},
@@ -49,9 +49,19 @@ impl Api {
 
     //_user: TokenAuthorization
     #[oai(path = "/devices", method = "get")]
-    async fn devices(&self, pool: Data<&DbPool>, ) -> Result<Json<Vec<DeviceHard>>> {
+    async fn devices(&self, pool: Data<&DbPool>, ) -> Result<Json<Vec<VoDeviceHard>>> {
         let devices = SYS_HARD_SERVICE.devices(pool).await?;
         Ok(Json(devices))
+    }
+
+    #[oai(path = "/devices", method = "post")]
+    async fn add_devices(&self, pool: Data<&DbPool>, data: Json<VoAddHard>) -> Result<()> {
+        SYS_HARD_SERVICE.add_device(pool, data.0).await.map_err(Error::from)
+    }
+
+    #[oai(path = "/devices", method = "put")]
+    async fn update_devices(&self, pool: Data<&DbPool>, data: Json<VoUpdateHard>) -> Result<()> {
+        SYS_HARD_SERVICE.update_device(pool, data.0).await.map_err(Error::from)
     }
 
     #[oai(path = "/softTypes", method = "get")]
@@ -60,10 +70,30 @@ impl Api {
         Ok(Json(types))
     }
 
+    #[oai(path = "/softTypes", method = "post")]
+    async fn add_soft_types(&self, pool: Data<&DbPool>, data: Json<VoAddSoft>) -> Result<()> {
+        SYS_SOFT_SERVICE.add_soft_version(pool, data.0).await.map_err(Error::from)
+    }
+
+    #[oai(path = "/softTypes", method = "put")]
+    async fn update_soft_types(&self, pool: Data<&DbPool>, data: Json<VoUpdateSoft>) -> Result<()> {
+        SYS_SOFT_SERVICE.update_soft_version(pool, data.0).await.map_err(Error::from)
+    }
+
     #[oai(path = "/firms", method = "get")]
     async fn firms(&self, pool: Data<&DbPool>) -> Result<Json<Vec<VoFirm>>> {
         let firms = SYS_FIRM_SERVICE.firms(pool).await?;
         Ok(Json(firms))
+    }
+
+    #[oai(path = "/firms", method = "post")]
+    async fn add_firms(&self, pool: Data<&DbPool>, data: Json<VoAddFirm>) -> Result<()> {
+        SYS_FIRM_SERVICE.add_firms(pool, data.0).await.map_err(Error::from)
+    }
+
+    #[oai(path = "/firms", method = "put")]
+    async fn update_firms(&self, pool: Data<&DbPool>, data: Json<VoUpdateFirm>) -> Result<()> {
+        SYS_FIRM_SERVICE.update_firms(pool, data.0).await.map_err(Error::from)
     }
 
     #[oai(path = "/firms/:device", method = "get")]
