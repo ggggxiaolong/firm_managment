@@ -11,6 +11,14 @@ const router = createRouter({
     {
       path: '/login',
       component: () => import('../views/Login.vue')
+    },
+    {
+      path: '/hard',
+      component: () => import('../views/DeviceHard.vue')
+    },
+    {
+      path: '/soft',
+      component: () => import('../views/DeviceSoft.vue')
     }
   ]
 })
