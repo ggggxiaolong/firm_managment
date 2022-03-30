@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from '@/components/HelloWorld.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
@@ -13,7 +12,9 @@ import HelloWorld from '@/components/HelloWorld.vue'
 #app {
   margin: 0 auto;
   padding: 2rem;
-
   font-weight: normal;
+}
+a {
+    color: green;
 }
 </style>

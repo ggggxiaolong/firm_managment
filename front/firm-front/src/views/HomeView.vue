@@ -3,9 +3,11 @@ import { ref, watch, watchEffect, type Ref } from 'vue'
 import type { BaseInfo, Firm } from "@/models";
 import { RouterLink } from 'vue-router'
 import { Api } from "@/models/api";
+import AddFirm from "../components/AddFirm.vue";
 const selectType: Ref<number> = ref(-1)
 const data: Ref<Array<Firm>> = ref([]);
 const baseInfo: Ref<null | BaseInfo> = ref(null);
+const showAdd = ref(false)
 
 watchEffect(async () => {
     Api.baseInfo().then(d => {
@@ -66,9 +68,10 @@ function formatTime(time: number): string {
             <RouterLink to="/hard">/硬件列表</RouterLink>
             <RouterLink to="/soft">/软件列表</RouterLink>
             <select v-model.number="selectType" v-if="baseInfo?.hard.length">
-            <option value="-1">硬件类型</option>
-            <option v-for="hard in baseInfo!!.hard" :value="hard.id">{{hard.name}}</option>
-        </select>
+                <option value="-1">硬件类型</option>
+                <option v-for="hard in baseInfo!!.hard" :value="hard.id">{{ hard.name }}</option>
+            </select>
+            <a href="#" @click.prevent="showAdd = true">/添加</a>
         </nav>
     </div>
     <table>
@@ -79,7 +82,7 @@ function formatTime(time: number): string {
                 <td>格式化</td>
                 <td>软件类型</td>
                 <td>指纹版本</td>
-                <td>URL</td>
+                <td>固件URL</td>
                 <td>描述</td>
                 <td>更新时间</td>
                 <td>关联版本</td>
@@ -111,6 +114,9 @@ function formatTime(time: number): string {
             </tr>
         </tbody>
     </table>
+    <Teleport to="body">
+        <AddFirm :base-info="baseInfo" :show="showAdd" @cancel="showAdd = false" />
+    </Teleport>
 </template>
 <style scoped>
 table {
@@ -126,7 +132,10 @@ thead td {
 tr td:last-child {
     border-right: 1px solid slategray;
 }
-nav a {
-    padding-right:1rem;
+nav > * {
+    margin-right: 1rem;
+}
+a {
+    color: green;
 }
 </style>
