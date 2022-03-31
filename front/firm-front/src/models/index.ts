@@ -36,10 +36,10 @@ export interface InAddFirm {
   readonly version_format: string;
   readonly version_type: number;
   readonly finger_level: number;
-  readonly url: number;
+  readonly url: string;
   readonly desc: string;
   readonly update_time: number;
-  readonly rely_version_type: number;
+  readonly rely_version_type?: number;
   readonly min?: string;
   readonly max?: string;
   readonly des_en: string;
@@ -84,8 +84,16 @@ export interface Login {
   readonly password: string;
 }
 
-
 export interface InUpdatePass {
-    readonly old_pass: string;
-    readonly new_pass: string;
+  readonly old_pass: string;
+  readonly new_pass: string;
+}
+
+export interface Upload {
+  readonly public_id: string;
+  readonly secure_url: string;
+}
+
+export interface Response {
+  readonly message: string
 }

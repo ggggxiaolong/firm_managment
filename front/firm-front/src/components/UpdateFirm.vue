@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { BaseInfo, InAddFirm } from '@/models';
+import type { BaseInfo, Firm } from '@/models';
 import { Api } from '@/models/api';
-import { ref, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 const props = defineProps<{
     baseInfo: BaseInfo | null,
-    show: boolean,
+    firm: Firm | null,
 }>()
 
 const emits = defineEmits<{
-    (e: "save", firm: InAddFirm): void,
+    (e: "save", firm: Firm): void,
     (e: "cancel"): void
 }>()
 
@@ -25,10 +25,27 @@ const max = ref("")
 const descEn = ref("")
 const descKo = ref("")
 const descSp = ref("")
-const date = ref(currentTimeString())
+const date = ref("")
+watch(() => props.firm, (f) => {
+    if (f) {
+        hardVersion.value = f.hard_version
+        versionName.value = f.version_name
+        versionFormat.value = f.version_format
+        versionType.value = f.version_type
+        fingerLevel.value = f.finger_level
+        desc.value = f.desc
+        relyVersionType.value = f.rely_version_type || -1
+        min.value = f.min || ""
+        max.value = f.max || ""
+        descEn.value = f.des_en
+        descKo.value = f.des_ko
+        descSp.value = f.des_sp
+        date.value = currentTimeString(f.update_time)
+    }
+})
 
-function currentTimeString(): string {
-    const date = new Date();
+function currentTimeString(time: number): string {
+    const date = new Date(time * 1000);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDay();
@@ -41,7 +58,7 @@ function currentTimeString(): string {
 async function onAdd() {
     if (hardVersion.value === 0 || versionName.value.length === 0
         || versionFormat.value.length === 0 || versionType.value === 0
-        || desc.value.length === 0 || file.value === null) {
+        || desc.value.length === 0) {
         alert("请检查必填项")
         return
     }
@@ -49,18 +66,16 @@ async function onAdd() {
         alert("如果有升级依赖必须填写最低或最高限制")
         return
     }
-    Api.uploadFirm(file.value).then(d => {
-        console.log(d)
-        const isRely = relyVersionType.value !== -1
-        // const url = "https://res.cloudinary.com/xiaolong/image/upload/v1648697177/upload_test/wjpohopty4tygc6motio.png"
-        const url = d.secure_url
-        const data: InAddFirm = {
+    const isRely = relyVersionType.value !== -1
+    if (file.value == null) {
+        const data: Firm = {
+            id: props.firm!!.id,
             hard_version: hardVersion.value,
             version_name: versionName.value,
             version_format: versionFormat.value,
             version_type: versionType.value,
             finger_level: fingerLevel.value,
-            url: url,
+            url: props.firm!!.url,
             desc: desc.value,
             update_time: new Date(date.value).getTime() / 1000,
             rely_version_type: isRely ? relyVersionType.value : undefined,
@@ -71,10 +86,34 @@ async function onAdd() {
             des_sp: descSp.value,
         }
         emits('save', data)
-    }).catch(e => {
-        console.log(e)
-        alert("文件上传失败,请重试")
-    })
+    } else {
+        Api.uploadFirm(file.value).then(d => {
+            console.log(d)
+            // const url = "https://res.cloudinary.com/xiaolong/image/upload/v1648697177/upload_test/wjpohopty4tygc6motio.png"
+            const url = d.secure_url
+            const data: Firm = {
+                id: props.firm!!.id,
+                hard_version: hardVersion.value,
+                version_name: versionName.value,
+                version_format: versionFormat.value,
+                version_type: versionType.value,
+                finger_level: fingerLevel.value,
+                url: url,
+                desc: desc.value,
+                update_time: new Date(date.value).getTime() / 1000,
+                rely_version_type: isRely ? relyVersionType.value : undefined,
+                min: isRely ? min.value : undefined,
+                max: isRely ? max.value : undefined,
+                des_en: descEn.value,
+                des_ko: descKo.value,
+                des_sp: descSp.value,
+            }
+            emits('save', data)
+        }).catch(e => {
+            console.log(e)
+            alert("文件上传失败,请重试")
+        })
+    }
 }
 
 function onSelectFile(e: Event) {
@@ -89,10 +128,10 @@ function onSelectFile(e: Event) {
 </script>
 <template>
     <Transition name="modal">
-        <div v-if="show && baseInfo" class="modal-mask">
+        <div v-if="baseInfo && firm" class="modal-mask">
             <div class="modal-wrapper">
                 <div class="modal-container">
-                    <h3>添加新固件</h3>
+                    <h3>修改新固件</h3>
                     <table>
                         <tr>
                             <td>
@@ -222,7 +261,7 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td></td>
                             <td class="button">
-                                <button @click="onAdd">添加</button>
+                                <button @click="onAdd">更新</button>
                                 <button class="outlineButton" @click="$emit('cancel')">取消</button>
                             </td>
                         </tr>

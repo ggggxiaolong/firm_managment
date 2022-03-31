@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { ref, watch, watchEffect, type Ref } from 'vue'
-import type { BaseInfo, Firm } from "@/models";
+import type { BaseInfo, Firm, InAddFirm } from "@/models";
 import { RouterLink } from 'vue-router'
 import { Api } from "@/models/api";
 import AddFirm from "../components/AddFirm.vue";
+import Dialog from "../components/Dialog.vue";
+import UpdateFirm from "../components/UpdateFirm.vue";
 const selectType: Ref<number> = ref(-1)
 const data: Ref<Array<Firm>> = ref([]);
 const baseInfo: Ref<null | BaseInfo> = ref(null);
 const showAdd = ref(false)
+const refleshIndex = ref(0)
+const deleteFirm: Ref<Firm | null> = ref(null)
+const editFirm: Ref<Firm | null> = ref(null)
 
 watchEffect(async () => {
     Api.baseInfo().then(d => {
@@ -16,7 +21,7 @@ watchEffect(async () => {
     }).catch(e => alert(e))
 })
 
-watch(selectType, async () => {
+watch([selectType, refleshIndex], async () => {
     if (selectType.value === -1) {
         Api.firms().then(d => { data.value = d }).catch(e => alert(e))
     } else {
@@ -60,6 +65,40 @@ function formatTime(time: number): string {
     const date = new Date(time * 1000)
     return date.toLocaleString("zh-CN")
 }
+
+async function addFirm(data: InAddFirm) {
+    Api.addFirm(data).then(_ => {
+        alert("添加成功")
+        showAdd.value = false
+        refleshIndex.value += 1
+    }).catch(e => {
+        alert(e)
+    })
+}
+
+async function updateFirm(data: Firm) {
+    Api.updateFirm(data).then(_ => {
+        alert("更新成功")
+        editFirm.value = null
+        refleshIndex.value += 1
+    }).catch(e => {
+        alert(e)
+    })
+}
+
+async function apiDeleteFirm() {
+    const firm = deleteFirm.value
+    if (firm) {
+        Api.deleteFirm(firm).then(_ => {
+            alert("删除成功")
+            deleteFirm.value = null
+            refleshIndex.value += 1
+        }).catch(e => {
+            alert(e)
+        })
+    }
+
+}
 </script>
 
 <template>
@@ -78,9 +117,9 @@ function formatTime(time: number): string {
         <thead>
             <tr>
                 <td>硬件类型</td>
+                <td>软件类型</td>
                 <td>版本名</td>
                 <td>格式化</td>
-                <td>软件类型</td>
                 <td>指纹版本</td>
                 <td>固件URL</td>
                 <td>描述</td>
@@ -91,14 +130,15 @@ function formatTime(time: number): string {
                 <td>英语</td>
                 <td>韩语</td>
                 <td>西班牙语</td>
+                <td>操作</td>
             </tr>
         </thead>
         <tbody>
             <tr v-for="firm in data">
                 <td>{{ formatHard(firm.hard_version) }}</td>
+                <td>{{ formatSoft(firm.version_type) }}</td>
                 <td>{{ firm.version_name }}</td>
                 <td>{{ firm.version_format }}</td>
-                <td>{{ formatSoft(firm.version_type) }}</td>
                 <td>{{ formatFinger(firm.finger_level) }}</td>
                 <td>
                     <a :href="firm.url" target="_blank">url</a>
@@ -111,11 +151,29 @@ function formatTime(time: number): string {
                 <td>{{ firm.des_en || "" }}</td>
                 <td>{{ firm.des_ko || "" }}</td>
                 <td>{{ firm.des_sp || "" }}</td>
+                <td>
+                    <a href="#" @click.prevent="editFirm = firm">/修改</a>
+                    <a href="#" @click.prevent="deleteFirm = firm">/删除</a>
+                </td>
             </tr>
         </tbody>
     </table>
     <Teleport to="body">
-        <AddFirm :base-info="baseInfo" :show="showAdd" @cancel="showAdd = false" />
+        <AddFirm :base-info="baseInfo" :show="showAdd" @cancel="showAdd = false" @save="addFirm" />
+        <Dialog :show="deleteFirm !== null" @on-close="deleteFirm = null" @on-ok="apiDeleteFirm">
+            <template #header>
+                <h3>删除固件</h3>
+            </template>
+            <template #body>
+                <span>{{ `确认要删除${formatHard(deleteFirm!!.hard_version)} 的 ${formatSoft(deleteFirm!!.version_type)}固件 ${deleteFirm!!.version_name} 吗?` }}</span>
+            </template>
+        </Dialog>
+        <UpdateFirm
+            :base-info="baseInfo"
+            :firm="editFirm"
+            @cancel="editFirm = null"
+            @save="updateFirm"
+        />
     </Teleport>
 </template>
 <style scoped>
@@ -137,5 +195,8 @@ nav > * {
 }
 a {
     color: green;
+}
+td a {
+    padding-left: 8px;
 }
 </style>
