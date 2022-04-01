@@ -12,17 +12,15 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@fortawesome/vue-fontawesome": "^3.0.0-5",
-    "@types/sha1": "^1.1.3",
     "sha1": "^1.1.1",
     "vue": "^3.2.31",
-    "vue-router": "^4.0.12",
-    "vue-virtual-scroll-grid": "^1.4.1"
+    "vue-router": "^4.0.12"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.0",
     "@types/jsdom": "^16.2.14",
     "@types/node": "^16.11.25",
+    "@types/sha1": "^1.1.3",
     "@vitejs/plugin-vue": "^2.2.2",
     "@vitejs/plugin-vue-jsx": "^1.3.7",
     "@vue/eslint-config-prettier": "^7.0.0",

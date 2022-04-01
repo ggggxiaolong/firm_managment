@@ -2,6 +2,7 @@
 import type { BaseInfo, InAddFirm } from '@/models';
 import { Api } from '@/models/api';
 import { ref, watch, type Ref } from 'vue'
+import IconLoading from './icons/IconLoading.vue'
 const props = defineProps<{
     baseInfo: BaseInfo | null,
     show: boolean,
@@ -11,6 +12,8 @@ const emits = defineEmits<{
     (e: "save", firm: InAddFirm): void,
     (e: "cancel"): void
 }>()
+
+const showLoading = ref(false)
 
 const hardVersion = ref(0)
 const versionName = ref("")
@@ -43,6 +46,7 @@ watch(() => props.show, (f) => {
         descKo.value = ""
         descSp.value = ""
         date.value = currentTimeString()
+        showLoading.value = false
     }
 })
 
@@ -87,8 +91,8 @@ async function onAdd() {
         alert("上传文件不能大于10M")
         return
     }
+    showLoading.value = true
     Api.uploadFirm(file.value).then(d => {
-        console.log(d)
         const isRely = relyVersionType.value !== -1
         // const url = "https://res.cloudinary.com/xiaolong/image/upload/v1648697177/upload_test/wjpohopty4tygc6motio.png"
         const url = d.secure_url
@@ -264,7 +268,7 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td></td>
                             <td class="button">
-                                <button @click="onAdd"> <i class="fa-solid fa-circle-notch fa-spin"></i>添加</button>
+                                <button @click="onAdd"> <IconLoading v-show="showLoading" /> 添加</button>
                                 <button class="outlineButton" @click="$emit('cancel')">取消</button>
                             </td>
                         </tr>

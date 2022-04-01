@@ -2,6 +2,7 @@
 import type { BaseInfo, Firm } from '@/models';
 import { Api } from '@/models/api';
 import { ref, watch, type Ref } from 'vue'
+import IconLoading from './icons/IconLoading.vue'
 const props = defineProps<{
     baseInfo: BaseInfo | null,
     firm: Firm | null,
@@ -12,6 +13,7 @@ const emits = defineEmits<{
     (e: "cancel"): void
 }>()
 
+const showLoading = ref(false)
 const hardVersion = ref(0)
 const versionName = ref("")
 const versionFormat = ref("")
@@ -42,6 +44,7 @@ watch(() => props.firm, (f) => {
         descSp.value = f.des_sp
         date.value = currentTimeString(f.update_time)
         file.value = null
+        showLoading.value = false
     }
 })
 
@@ -82,6 +85,7 @@ async function onAdd() {
         return
     }
     const isRely = relyVersionType.value !== -1
+    showLoading.value = true
     if (file.value == null) {
         const data: Firm = {
             id: props.firm!!.id,
@@ -292,7 +296,7 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td></td>
                             <td class="button">
-                                <button @click="onAdd">更新</button>
+                                <button @click="onAdd"> <IconLoading v-show="showLoading"/>更新</button>
                                 <button class="outlineButton" @click="$emit('cancel')">取消</button>
                             </td>
                         </tr>
