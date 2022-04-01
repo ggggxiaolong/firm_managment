@@ -63,7 +63,7 @@ impl SqlHelper {
         helper
     }
 
-    pub fn and_where_eq(&mut self, column_name: &str, mask: &str) -> &mut Self {
+    pub fn and_where_eq(&mut self, column_name: &str) -> &mut Self {
         if self.has_where {
             self.sql.push_str(" AND ");
         } else {
@@ -71,12 +71,11 @@ impl SqlHelper {
         }
         self.sql.push_str(" WHERE ");
         self.sql.push_str(column_name);
-        self.sql.push_str(" = ");
-        self.sql.push_str(mask);
+        self.sql.push_str(" = ?");
         self
     }
 
-    pub fn and_where_not_eq(&mut self, column_name: &str, mask: &str) -> &mut Self {
+    pub fn and_where_not_eq(&mut self, column_name: &str) -> &mut Self {
         if self.has_where {
             self.sql.push_str(" AND ");
         } else {
@@ -84,12 +83,11 @@ impl SqlHelper {
         }
         self.sql.push_str(" WHERE ");
         self.sql.push_str(column_name);
-        self.sql.push_str(" <> ");
-        self.sql.push_str(mask);
+        self.sql.push_str(" <> ?");
         self
     }
 
-    pub fn and_where_like(&mut self, column_name: &str, mask: &str) -> &mut Self {
+    pub fn and_where_like(&mut self, column_name: &str) -> &mut Self {
         if self.has_where {
             self.sql.push_str(" AND ");
         } else {
@@ -97,32 +95,8 @@ impl SqlHelper {
         }
         self.sql.push_str(" WHERE ");
         self.sql.push_str(column_name);
-        self.sql.push_str(" like %");
-        self.sql.push_str(mask);
-        self.sql.push('%');
+        self.sql.push_str(" like %?%");
         self
-    }
-
-    pub fn and_where_like_option(&mut self, column_name: &str, mask: Option<String>) -> &mut Self {
-        match mask {
-            None => self,
-            Some(mask) => {
-                if mask.is_empty() {
-                    return self;
-                }
-                if self.has_where {
-                    self.sql.push_str(" AND ");
-                } else {
-                    self.has_where = true
-                }
-                self.sql.push_str(" WHERE ");
-                self.sql.push_str(column_name);
-                self.sql.push_str(" like %");
-                self.sql.push_str(&mask);
-                self.sql.push('%');
-                self
-            }
-        }
     }
 
     pub fn page(&mut self, page: i32, page_size: i32) -> &mut Self {

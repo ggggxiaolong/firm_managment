@@ -52,7 +52,7 @@ impl Api {
 
     /// 获取所有硬件类型
     #[oai(path = "/devices", method = "get")]
-    async fn devices(&self, pool: Data<&DbPool>, ) -> Result<Json<Vec<VoDeviceHard>>> {
+    async fn devices(&self, pool: Data<&DbPool>, _user: TokenAuthorization,) -> Result<Json<Vec<VoDeviceHard>>> {
         let devices = SYS_HARD_SERVICE.devices(&pool).await?;
         Ok(Json(devices))
     }

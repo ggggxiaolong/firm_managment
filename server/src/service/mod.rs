@@ -23,16 +23,17 @@ lazy_static! {
 pub struct UserService;
 
 const TABLE_USER: &str = "user";
-const USER_COLUMNS: &str = "id, name, mail, password";
+const USER_COLUMNS: &str = "id, name, mail, password, update_time";
 
 impl UserService {
     pub async fn login(&self, pool: &Data<&DbPool>, data: VoLogin) -> Result<VoUser, CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
-        let sql = helper.and_where_eq("mail", &data.email).sql();
+        let sql = helper.and_where_eq("mail").sql();
         let user: User = sqlx::query_as(&sql)
+            .bind(&data.email)
             .fetch_one(pool.0)
             .await
-            .map_err(|_| CustomError::MailOrPasswordFail)?;
+            .map_err(|_e| CustomError::MailOrPasswordFail)?;
         match bcrypt::verify(&data.password, &user.password) {
             Ok(true) => Ok(user.into()),
             _ => Err(CustomError::MailOrPasswordFail),
@@ -45,7 +46,7 @@ impl UserService {
         data: VoUpdateUser,
     ) -> Result<(), CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
-        let sql = helper.and_where_eq("id", "?").sql();
+        let sql = helper.and_where_eq("id").sql();
         let user: User = sqlx::query_as(&sql)
             .bind(user.id)
             .fetch_one(pool.0)
@@ -53,13 +54,17 @@ impl UserService {
             .map_err(|_| CustomError::MailOrPasswordFail)?;
         match bcrypt::verify(&data.old_pass, &user.password) {
             Ok(true) => {
-                sqlx::query("UPDATE user SET password = ?, update_time = ? WHERE id = ?")
-                    .bind(data.new_pass)
-                    .bind(Utc::now().naive_utc())
-                    .bind(user.id)
-                    .execute(pool.0)
-                    .await?;
-                Ok(())
+                if let Ok(gen_pass) = bcrypt::hash(&user.password, 10) {
+                    sqlx::query("UPDATE user SET password = ?, update_time = ? WHERE id = ?")
+                        .bind(gen_pass)
+                        .bind(Utc::now().naive_utc())
+                        .bind(user.id)
+                        .execute(pool.0)
+                        .await?;
+                    Ok(())
+                } else {
+                    Err(CustomError::Internal("internal_error".to_string()))
+                }
             }
             _ => Err(CustomError::PasswordError),
         }
@@ -71,7 +76,7 @@ impl UserService {
         data: VoUser,
     ) -> Result<User, CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
-        let sql = helper.and_where_eq("id", "?").sql();
+        let sql = helper.and_where_eq("id").sql();
         let user: User = sqlx::query_as(&sql)
             .bind(data.id)
             .fetch_one(pool.0)
@@ -132,7 +137,7 @@ impl DeviceHardService {
         data: VoUpdateHard,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::update(TABLE_HARD, HARD_ADD_COLUMNS)
-            .and_where_eq(" id ", "?")
+            .and_where_eq(" id ")
             .sql();
         let rows_affected = sqlx::query(&sql)
             .bind(data.hard_version)
@@ -187,7 +192,7 @@ impl DeviceSoftService {
         data: VoUpdateSoft,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::update(TABLE_SOFT, SOFT_ADD_COLUMNS)
-            .and_where_eq(" id ", "?")
+            .and_where_eq(" id ")
             .sql();
         let rows_affected = sqlx::query(&sql)
             .bind(data.name)
@@ -226,10 +231,13 @@ impl FirmService {
         hard_version: i32,
     ) -> Result<Vec<VoFirm>, CustomError> {
         let sql = SqlHelper::query(TABLE_FIRM, FIRM_COLUMNS)
-            .and_where_eq("hard_version", &hard_version.to_string())
+            .and_where_eq("hard_version")
             .order_desc("update_time")
             .sql();
-        let data: Vec<Firm> = sqlx::query_as(&sql).fetch_all(pool.0).await?;
+        let data: Vec<Firm> = sqlx::query_as(&sql)
+            .bind(&hard_version)
+            .fetch_all(pool.0)
+            .await?;
         let mut firms = Vec::with_capacity(data.len());
         for f in data {
             firms.push(f.into())
@@ -238,7 +246,7 @@ impl FirmService {
     }
 
     pub async fn delete_firm(&self, pool: &Data<&DbPool>, id: i32) -> Result<(), CustomError> {
-        let sql = SqlHelper::delete(TABLE_FIRM).and_where_eq("id", "?").sql();
+        let sql = SqlHelper::delete(TABLE_FIRM).and_where_eq("id").sql();
         let rows_affected = sqlx::query(&sql)
             .bind(id)
             .execute(pool.0)
@@ -287,7 +295,7 @@ impl FirmService {
         data: VoUpdateFirm,
     ) -> Result<(), CustomError> {
         let sql = SqlHelper::update(TABLE_FIRM, FIRM_ADD_COLUMNS)
-            .and_where_eq(" id ", "?")
+            .and_where_eq(" id ")
             .sql();
         let data = data.check_data();
         let rows_affected = sqlx::query(&sql)
@@ -324,6 +332,8 @@ impl FirmService {
 mod tests {
 
     // use bcrypt::{DEFAULT_COST, hash, verify};
+    use crypto::digest::Digest;
+    use crypto::sha1::Sha1;
 
     #[test]
     fn test_bcrypt() {
@@ -333,5 +343,13 @@ mod tests {
         )
         .unwrap();
         assert!(ret);
+    }
+
+    #[test]
+    fn test_has() {
+        let mut hasher = Sha1::new();
+        hasher.input_str("hello world");
+        let hex = hasher.result_str();
+        assert_eq!(hex, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
     }
 }
