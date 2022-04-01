@@ -2,7 +2,6 @@
 import type { BaseInfo, InAddFirm } from '@/models';
 import { Api } from '@/models/api';
 import { ref, watch, type Ref } from 'vue'
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 const props = defineProps<{
     baseInfo: BaseInfo | null,
     show: boolean,
@@ -265,7 +264,7 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td></td>
                             <td class="button">
-                                <button @click="onAdd"> <FontAwesomeIcon icon="fa-solid fa-circle-notch fa-spin"/>添加</button>
+                                <button @click="onAdd"> <i class="fa-solid fa-circle-notch fa-spin"></i>添加</button>
                                 <button class="outlineButton" @click="$emit('cancel')">取消</button>
                             </td>
                         </tr>
