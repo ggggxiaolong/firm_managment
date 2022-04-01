@@ -6,6 +6,7 @@ import { Api } from "@/models/api";
 import AddFirm from "../components/AddFirm.vue";
 import Dialog from "../components/Dialog.vue";
 import UpdateFirm from "../components/UpdateFirm.vue";
+import {projectInjetct} from "../inject"
 const selectType: Ref<number> = ref(-1)
 const data: Ref<Array<Firm>> = ref([]);
 const baseInfo: Ref<null | BaseInfo> = ref(null);
@@ -13,20 +14,28 @@ const showAdd = ref(false)
 const refleshIndex = ref(0)
 const deleteFirm: Ref<Firm | null> = ref(null)
 const editFirm: Ref<Firm | null> = ref(null)
+const {reload, handleError} = projectInjetct()
 
 watchEffect(async () => {
     Api.baseInfo().then(d => {
         baseInfo.value = d
-        Api.firms().then(d => { data.value = d }).catch(e => alert(e))
-    }).catch(e => alert(e))
+        Api.firms().then(d => { data.value = d }).catch(e => handleError(e))
+    }).catch(e => handleError(e))
 })
 
 watch([selectType, refleshIndex], async () => {
     if (selectType.value === -1) {
-        Api.firms().then(d => { data.value = d }).catch(e => alert(e))
+        Api.firms().then(d => { data.value = d }).catch(e => handleError(e))
     } else {
-        Api.deviceFirms(selectType.value).then(d => { data.value = d }).catch(e => alert(e))
+        Api.deviceFirms(selectType.value).then(d => { data.value = d }).catch(e => handleError(e))
     }
+})
+
+watch(reload, async () => {
+    Api.baseInfo().then(d => {
+        baseInfo.value = d
+        Api.firms().then(d => { data.value = d }).catch(e => handleError(e))
+    }).catch(e => alert(e))
 })
 
 function formatHard(id: number): string {
@@ -68,7 +77,6 @@ function formatTime(time: number): string {
 
 async function addFirm(data: InAddFirm) {
     Api.addFirm(data).then(_ => {
-        alert("添加成功")
         showAdd.value = false
         refleshIndex.value += 1
     }).catch(e => {
@@ -198,5 +206,8 @@ a {
 }
 td a {
     padding-left: 8px;
+}
+tr:hover {
+    background-color: lightgray;
 }
 </style>

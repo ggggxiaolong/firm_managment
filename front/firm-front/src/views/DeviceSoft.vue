@@ -1,14 +1,16 @@
 <script setup lang="ts">
+import { projectInjetct } from '@/inject';
 import type { DeviceSoft } from '@/models';
 import { Api } from '@/models/api';
 import { ref, watch, type Ref } from 'vue'
 import { RouterLink } from 'vue-router'
 const data: Ref<Array<DeviceSoft>> = ref([])
-const reload = ref(0)
-watch(reload, async () => {
-    Api.deviceSoft().then(d => data.value = d).catch(e => alert(e))
+const reloadIndex = ref(0)
+const {reload, handleError} = projectInjetct()
+watch([reload, reloadIndex], async () => {
+    Api.deviceSoft().then(d => data.value = d).catch(e => handleError(e))
 })
-reload.value += 1
+reloadIndex.value += 1
 </script>
 <template>
     <div>

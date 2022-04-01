@@ -1,15 +1,17 @@
-import type {
-  BaseInfo,
-  DeviceHard,
-  DeviceSoft,
-  Firm,
-  InAddFirm,
-  InAddHardType,
-  InAddSoftType,
-  InUpdatePass,
-  Login,
-  Token,
-  Upload,
+import {
+  ApiError,
+  type ApiResponse,
+  type BaseInfo,
+  type DeviceHard,
+  type DeviceSoft,
+  type Firm,
+  type InAddFirm,
+  type InAddHardType,
+  type InAddSoftType,
+  type InUpdatePass,
+  type Login,
+  type Token,
+  type Upload,
 } from ".";
 
 export class Store {
@@ -36,7 +38,7 @@ async function post<T>(path: string, data: any): Promise<T> {
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    return Promise.reject(new Error(await response.text()));
+    return Promise.reject(new ApiError(response.status, await response.text()));
   }
   return response.json();
 }
@@ -52,7 +54,7 @@ async function put<T>(path: string, data: any): Promise<T> {
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    return Promise.reject(new Error(await response.text()));
+    return Promise.reject(new ApiError(response.status, await response.text()));
   }
   return response.json();
 }
@@ -66,7 +68,7 @@ async function get<T>(path: string): Promise<T> {
     },
   });
   if (!response.ok) {
-    return Promise.reject(new Error(await response.text()));
+    return Promise.reject(new ApiError(response.status, await response.text()));
   }
   return response.json();
 }
@@ -80,7 +82,7 @@ async function del<T>(path: string): Promise<T> {
     },
   });
   if (!response.ok) {
-    return Promise.reject(new Error(await response.text()));
+    return Promise.reject(new ApiError(response.status, await response.text()));
   }
   return response.json();
 }
@@ -89,6 +91,10 @@ export class Api {
   static async login(data: Login): Promise<Token> {
     const response = await fetch(`${BASE_URL}/login`, {
       method: "POST",
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     });
     if (!response.ok) {
@@ -99,7 +105,7 @@ export class Api {
     return Promise.resolve(token);
   }
 
-  static async updatePass(data: InUpdatePass): Promise<Response> {
+  static async updatePass(data: InUpdatePass): Promise<ApiResponse> {
     return post("/user/updatePass", data);
   }
 
@@ -107,11 +113,11 @@ export class Api {
     return get("/devices");
   }
 
-  static async addeDeviceHard(data: InAddHardType): Promise<Response> {
+  static async addeDeviceHard(data: InAddHardType): Promise<ApiResponse> {
     return post("/devices", data);
   }
 
-  static async updateDeviceHard(data: DeviceHard): Promise<Response> {
+  static async updateDeviceHard(data: DeviceHard): Promise<ApiResponse> {
     return put("/devices", data);
   }
 
@@ -123,11 +129,11 @@ export class Api {
     return get("/softTypes");
   }
 
-  static async addeDeviceSoft(data: InAddSoftType): Promise<Response> {
+  static async addeDeviceSoft(data: InAddSoftType): Promise<ApiResponse> {
     return post("/softTypes", data);
   }
 
-  static async updateDeviceSoft(data: DeviceSoft): Promise<Response> {
+  static async updateDeviceSoft(data: DeviceSoft): Promise<ApiResponse> {
     return put("/softTypes", data);
   }
 
@@ -135,15 +141,15 @@ export class Api {
     return get("/firms");
   }
 
-  static async updateFirm(data: Firm): Promise<Response> {
+  static async updateFirm(data: Firm): Promise<ApiResponse> {
     return put("/firms", data);
   }
 
-  static async deleteFirm(data: Firm): Promise<Response> {
+  static async deleteFirm(data: Firm): Promise<ApiResponse> {
     return del(`/firms/${data.id}`);
   }
 
-  static async addFirm(data: InAddFirm): Promise<Response> {
+  static async addFirm(data: InAddFirm): Promise<ApiResponse> {
     return post("/firms", data);
   }
 
@@ -154,7 +160,10 @@ export class Api {
   static async uploadFirm<T>(file: File): Promise<Upload> {
     const form = new FormData();
     form.append("file", file);
-    form.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET || "**");
+    form.append(
+      "upload_preset",
+      import.meta.env.VITE_CLOUDINARY_PRESET || "**"
+    );
     form.append("api_key", "");
     form.append("source", "ml");
     const response = await fetch(

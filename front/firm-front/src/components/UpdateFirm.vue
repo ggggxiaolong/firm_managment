@@ -44,14 +44,28 @@ watch(() => props.firm, (f) => {
     }
 })
 
+watch(versionName, (v) => {
+    const arr: Array<number> = [];
+    for (let index = v.length - 2; index > -2; index -= 2) {
+        const start = index > -1 ? index : 0
+        arr.push(Number.parseInt(v.slice(start, index + 2), 16))
+    }
+    versionFormat.value = arr.join('.')
+})
+
+watch(versionType, (v) => {
+    if (v !== 3) {
+        fingerLevel.value = 0
+    }
+})
+
 function currentTimeString(time: number): string {
     const date = new Date(time * 1000);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
-    const day = date.getDay();
+    const day = date.getDate();
     const hours = date.getHours();
     const minutes = date.getMinutes();
-
     return `${year}-${month < 10 ? 0 : ''}${month}-${day < 10 ? 0 : ''}${day}T${hours < 10 ? 0 : ''}${hours}:${minutes < 10 ? 0 : ''}${minutes}`
 }
 
@@ -128,8 +142,8 @@ function onSelectFile(e: Event) {
 </script>
 <template>
     <Transition name="modal">
-        <div v-if="baseInfo && firm" class="modal-mask">
-            <div class="modal-wrapper">
+        <div v-if="baseInfo && firm" class="modal-mask" >
+            <div class="modal-wrapper" @click.self="$emit('cancel')">
                 <div class="modal-container">
                     <h3>修改新固件</h3>
                     <table>
@@ -180,7 +194,11 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td>指纹版本</td>
                             <td>
-                                <select v-model.number="fingerLevel" id="fingerLevel">
+                                <select
+                                    v-model.number="fingerLevel"
+                                    id="fingerLevel"
+                                    :disabled="versionType !== 3"
+                                >
                                     <option value="0">All</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -198,6 +216,14 @@ function onSelectFile(e: Event) {
                                     @change="onSelectFile"
                                     multiple="false"
                                 />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>URL</td>
+                            <td>
+                                <a :href="firm.url" target="_blank">
+                                    <div class="breakword">{{ firm.url }}</div>
+                                </a>
                             </td>
                         </tr>
                         <tr>
@@ -272,44 +298,6 @@ function onSelectFile(e: Event) {
     </Transition>
 </template>
 <style scoped>
-.modal-wrapper {
-    display: table-cell;
-    vertical-align: middle;
-}
-
-.modal-container {
-    width: 600px;
-    margin: 0px auto;
-    padding: 20px 30px;
-    background-color: #fff;
-    border-radius: 2px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
-    transition: all 0.3s ease;
-}
-.modal-mask {
-    position: fixed;
-    z-index: 9998;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: table;
-    transition: opacity 0.3s ease;
-}
-.modal-enter-from {
-    opacity: 0;
-}
-
-.modal-leave-to {
-    opacity: 0;
-}
-
-.modal-enter-from .modal-container,
-.modal-leave-to .modal-container {
-    -webkit-transform: scale(1.1);
-    transform: scale(1.1);
-}
 input {
     width: 300px;
     height: 24px;
@@ -348,5 +336,19 @@ table {
 }
 .requier {
     color: red;
+}
+.breakword {
+    width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl;
+    @supports (-webkit-line-clamp: 2) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: initial;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
 }
 </style>

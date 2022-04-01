@@ -94,6 +94,15 @@ export interface Upload {
   readonly secure_url: string;
 }
 
-export interface Response {
-  readonly message: string
+export interface ApiResponse {
+  readonly message: string;
+}
+
+export class ApiError {
+  status: number;
+  message: string;
+  constructor(status: number, message: string){
+    this.status = status;
+    this.message = message;
+  }
 }
