@@ -25,17 +25,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let pool = DbPool::connect("sqlite://firm.db").await?;
     let api_service =
-        OpenApiService::new(Api, "Firm Api", "1.0.0").server("http://localhost:3000");
+        OpenApiService::new(Api, "Firm Api", "1.0.0").server("http://0.0.0.0:3000");
     let ui = api_service.swagger_ui();
     let spec = api_service.spec();
     let route = Route::new()
-        .nest("/", api_service)
+        .nest("/api", api_service)
         .nest("/ui", ui)
         .at("/spec", poem::endpoint::make_sync(move |_| spec.clone()))
         .with(Cors::new())
         .data(pool);
 
-    Server::new(TcpListener::bind("127.0.0.1:3000"))
+    Server::new(TcpListener::bind("0.0.0.0:3000"))
         .run(route)
         .await?;
     Ok(())

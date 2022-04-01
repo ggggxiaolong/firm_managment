@@ -21,7 +21,7 @@ fn gen_token(user: &VoUser, is_refresh: bool) -> String {
         exp: if is_refresh {
             now + 60 * 60 * 24 * 7
         } else {
-            now + 60 * 60
+            now + 7200
         },
     };
     encode(
