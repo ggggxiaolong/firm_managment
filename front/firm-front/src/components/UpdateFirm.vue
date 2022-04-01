@@ -41,6 +41,7 @@ watch(() => props.firm, (f) => {
         descKo.value = f.des_ko
         descSp.value = f.des_sp
         date.value = currentTimeString(f.update_time)
+        file.value = null
     }
 })
 
@@ -101,6 +102,10 @@ async function onAdd() {
         }
         emits('save', data)
     } else {
+        if (file.value.size > 1024 * 1024 * 10) {
+            alert("上传文件不能大于10M")
+            return
+        }
         Api.uploadFirm(file.value).then(d => {
             console.log(d)
             // const url = "https://res.cloudinary.com/xiaolong/image/upload/v1648697177/upload_test/wjpohopty4tygc6motio.png"
@@ -142,7 +147,7 @@ function onSelectFile(e: Event) {
 </script>
 <template>
     <Transition name="modal">
-        <div v-if="baseInfo && firm" class="modal-mask" >
+        <div v-if="baseInfo && firm" class="modal-mask">
             <div class="modal-wrapper" @click.self="$emit('cancel')">
                 <div class="modal-container">
                     <h3>修改新固件</h3>

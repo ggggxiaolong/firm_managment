@@ -25,7 +25,7 @@ export class Store {
     this.info = info;
   }
 }
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "/api";
 
 async function post<T>(path: string, data: any): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {

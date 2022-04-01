@@ -2,6 +2,7 @@
 import type { BaseInfo, InAddFirm } from '@/models';
 import { Api } from '@/models/api';
 import { ref, watch, type Ref } from 'vue'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 const props = defineProps<{
     baseInfo: BaseInfo | null,
     show: boolean,
@@ -26,6 +27,25 @@ const descEn = ref("")
 const descKo = ref("")
 const descSp = ref("")
 const date = ref(currentTimeString())
+
+watch(() => props.show, (f) => {
+    if (f) {
+        hardVersion.value = 0
+        versionName.value = ""
+        versionFormat.value = ""
+        versionType.value = 0
+        fingerLevel.value = 0
+        desc.value = ""
+        file.value = null
+        relyVersionType.value = -1
+        min.value = ""
+        max.value = ""
+        descEn.value = ""
+        descKo.value = ""
+        descSp.value = ""
+        date.value = currentTimeString()
+    }
+})
 
 watch(versionName, (v) => {
     const arr: Array<number> = [];
@@ -62,6 +82,10 @@ async function onAdd() {
     }
     if (relyVersionType.value !== -1 && min.value.length === 0 && max.value.length === 0) {
         alert("如果有升级依赖必须填写最低或最高限制")
+        return
+    }
+    if (file.value.size > 1024 * 1024 * 10) {
+        alert("上传文件不能大于10M")
         return
     }
     Api.uploadFirm(file.value).then(d => {
@@ -156,7 +180,11 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td>指纹版本</td>
                             <td>
-                                <select v-model.number="fingerLevel" id="fingerLevel" :disabled="versionType !== 3">
+                                <select
+                                    v-model.number="fingerLevel"
+                                    id="fingerLevel"
+                                    :disabled="versionType !== 3"
+                                >
                                     <option value="0">All</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -237,7 +265,7 @@ function onSelectFile(e: Event) {
                         <tr>
                             <td></td>
                             <td class="button">
-                                <button @click="onAdd">添加</button>
+                                <button @click="onAdd"> <FontAwesomeIcon icon="fa-solid fa-circle-notch fa-spin"/>添加</button>
                                 <button class="outlineButton" @click="$emit('cancel')">取消</button>
                             </td>
                         </tr>

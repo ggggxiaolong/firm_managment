@@ -10,8 +10,8 @@ defineEmits<{
 
 <template>
     <Transition name="modal">
-        <div v-if="show" class="modal-mask" @click="$emit('onClose')">
-            <div class="modal-wrapper">
+        <div v-if="show" class="modal-mask" >
+            <div class="modal-wrapper" @click.self="$emit('onClose')">
                 <div class="modal-container">
                     <div class="modal-header">
                         <slot name="header"></slot>
