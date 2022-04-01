@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::Error as SqlxError;
 use thiserror::Error;
 
+/// Token
 #[derive(Debug, Serialize, Deserialize, Clone, Object)]
 pub struct Token {
     pub access_token: String,
@@ -22,11 +23,11 @@ impl Token {
     }
 }
 
+/// 用户
 #[derive(Debug, Serialize, Clone, Deserialize, Object)]
 pub struct VoUser {
     pub id: i32,
     pub name: String,
-    pub mail: String,
     pub ticker: i64,
 }
 
@@ -35,30 +36,33 @@ impl From<User> for VoUser {
         VoUser {
             id: u.id,
             name: u.name,
-            mail: u.mail,
             ticker: u.update_time.timestamp(),
         }
     }
 }
 
+/// 更新用户密码
 #[derive(Debug, Serialize, Clone, Deserialize, Object)]
 pub struct VoUpdateUser {
     pub old_pass: String,
     pub new_pass: String,
 }
 
+/// 基础数据
 #[derive(Serialize, Deserialize, Object)]
 pub struct BaseInfo {
     pub hard: Vec<VoDeviceHard>,
     pub soft: Vec<DeviceSoft>,
 }
 
+/// 登陆
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoLogin {
     pub email: String,
     pub password: String,
 }
 
+/// 固件
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoFirm {
     pub id: i32,
@@ -140,6 +144,7 @@ impl From<CustomError> for PError {
     }
 }
 
+/// 硬件分类
 #[derive(Serialize, Deserialize, Enum)]
 pub enum VoHardCategory {
     Lock,
@@ -165,6 +170,7 @@ impl From<VoHardCategory> for i32 {
     }
 }
 
+/// 硬件类型
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoDeviceHard {
     pub id: i32,
@@ -192,6 +198,7 @@ impl From<DeviceHard> for VoDeviceHard {
     }
 }
 
+/// 添加硬件类型
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoAddHard {
     pub hard_version: String,
@@ -203,6 +210,7 @@ pub struct VoAddHard {
     pub desc: String,
 }
 
+/// 更新硬件类型
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoUpdateHard {
     pub id: i32,
@@ -215,17 +223,20 @@ pub struct VoUpdateHard {
     pub desc: String,
 }
 
+/// 添加软件类型
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoAddSoft {
     pub name: String,
 }
 
+/// 更新软件类型
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoUpdateSoft {
     pub id: i32,
     pub name: String,
 }
 
+/// 添加固件
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoAddFirm {
     pub hard_version: i32,
@@ -268,6 +279,7 @@ impl VoAddFirm {
     }
 }
 
+/// 更新固件
 #[derive(Object, Serialize, Deserialize)]
 pub struct VoUpdateFirm {
     pub id: i32,
@@ -310,5 +322,17 @@ impl VoUpdateFirm {
                 des_sp: self.des_sp, 
             }
         }
+    }
+}
+
+/// 变更结果
+#[derive(Object, Serialize, Deserialize)]
+pub struct ReturnData {
+    pub message: String,
+}
+
+impl Default for ReturnData {
+    fn default() -> Self {
+        Self { message: String::from("ok") }
     }
 }

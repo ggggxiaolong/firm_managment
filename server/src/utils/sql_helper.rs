@@ -40,15 +40,26 @@ impl SqlHelper {
         };
         helper.sql.push_str("INSERT INTO ");
         helper.sql.push_str(table);
-        helper.sql.push_str(" [( ");
+        helper.sql.push_str(" ( ");
         helper.sql.push_str(columns);
-        helper.sql.push_str(" )] ");
+        helper.sql.push_str(" ) ");
         helper.sql.push_str("VALUES (");
         for _ in columns.split(',').collect::<Vec<&str>>(){
             helper.sql.push_str(" ?,");
         }
         helper.sql.pop();
         helper.sql.push_str(" ) ");
+        helper
+    }
+
+    pub fn delete(table: &str) -> Self {
+        let mut helper = SqlHelper {
+            sql: String::new(),
+            has_where: false,
+        };
+        helper.sql.push_str("DELETE FROM ");
+        helper.sql.push_str(table);
+        helper.sql.push(' ');
         helper
     }
 

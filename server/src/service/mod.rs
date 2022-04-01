@@ -1,12 +1,12 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
-use poem::{web::Data};
+use poem::web::Data;
 
 use crate::{
     domain::{
         dto::{DeviceHard, DeviceSoft, Firm, User},
         vo::{
-            CustomError, VoAddFirm, VoAddHard, VoAddSoft, VoFirm, VoLogin, VoUpdateFirm,
-            VoUpdateHard, VoUpdateSoft, VoUpdateUser, VoUser, VoDeviceHard,
+            CustomError, VoAddFirm, VoAddHard, VoAddSoft, VoDeviceHard, VoFirm, VoLogin,
+            VoUpdateFirm, VoUpdateHard, VoUpdateSoft, VoUpdateUser, VoUser,
         },
     },
     utils::sql_helper::SqlHelper,
@@ -45,8 +45,9 @@ impl UserService {
         data: VoUpdateUser,
     ) -> Result<(), CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
-        let sql = helper.and_where_eq("mail", &user.mail).sql();
+        let sql = helper.and_where_eq("id", "?").sql();
         let user: User = sqlx::query_as(&sql)
+            .bind(user.id)
             .fetch_one(pool.0)
             .await
             .map_err(|_| CustomError::MailOrPasswordFail)?;
@@ -70,8 +71,9 @@ impl UserService {
         data: VoUser,
     ) -> Result<User, CustomError> {
         let mut helper = SqlHelper::query(TABLE_USER, USER_COLUMNS);
-        let sql = helper.and_where_eq("mail", &data.mail).sql();
+        let sql = helper.and_where_eq("id", "?").sql();
         let user: User = sqlx::query_as(&sql)
+            .bind(data.id)
             .fetch_one(pool.0)
             .await
             .map_err(|_| CustomError::TokenError)?;
@@ -92,9 +94,7 @@ const HARD_ADD_COLUMNS: &str =
 impl DeviceHardService {
     pub async fn devices(&self, pool: &Data<&DbPool>) -> Result<Vec<VoDeviceHard>, CustomError> {
         let sql = SqlHelper::query(TABLE_HARD, HARD_COLUMNS).sql();
-        let devices: Vec<DeviceHard> = sqlx::query_as(&sql)
-            .fetch_all(pool.0)
-            .await?;
+        let devices: Vec<DeviceHard> = sqlx::query_as(&sql).fetch_all(pool.0).await?;
         let mut data = Vec::<VoDeviceHard>::with_capacity(devices.len());
         for d in devices {
             data.push(d.into());
@@ -160,7 +160,10 @@ const TABLE_SOFT: &str = "version_type";
 const SOFT_COLUMNS: &str = "id, name";
 const SOFT_ADD_COLUMNS: &str = "name";
 impl DeviceSoftService {
-    pub async fn soft_versions(&self, pool: &Data<&DbPool>) -> Result<Vec<DeviceSoft>, CustomError> {
+    pub async fn soft_versions(
+        &self,
+        pool: &Data<&DbPool>,
+    ) -> Result<Vec<DeviceSoft>, CustomError> {
         let sql = SqlHelper::query(TABLE_SOFT, SOFT_COLUMNS).sql();
         sqlx::query_as(&sql)
             .fetch_all(pool.0)
@@ -234,7 +237,25 @@ impl FirmService {
         Ok(firms)
     }
 
-    pub async fn add_firms(&self, pool: &Data<&DbPool>, data: VoAddFirm) -> Result<(), CustomError> {
+    pub async fn delete_firm(&self, pool: &Data<&DbPool>, id: i32) -> Result<(), CustomError> {
+        let sql = SqlHelper::delete(TABLE_FIRM).and_where_eq("id", "?").sql();
+        let rows_affected = sqlx::query(&sql)
+            .bind(id)
+            .execute(pool.0)
+            .await?
+            .rows_affected();
+        if rows_affected > 0 {
+            Ok(())
+        } else {
+            Err(CustomError::DataNotFound)
+        }
+    }
+
+    pub async fn add_firms(
+        &self,
+        pool: &Data<&DbPool>,
+        data: VoAddFirm,
+    ) -> Result<(), CustomError> {
         let sql = SqlHelper::insert(TABLE_FIRM, FIRM_ADD_COLUMNS).sql();
         let data = data.check_data();
         sqlx::query(&sql)

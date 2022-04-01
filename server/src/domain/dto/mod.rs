@@ -23,6 +23,7 @@ pub struct DeviceHard {
     pub desc: String,
 }
 
+/// 软件类型
 #[derive(sqlx::FromRow, Serialize, Deserialize, Object)]
 pub struct DeviceSoft {
     pub id: i32,
